@@ -2,6 +2,10 @@
 
 This is a Tetris game implemented in Python using the Pygame library.
 
+![Tetris Game Demo](https://github.com/tobecrazy/GamesAI/blob/main/assets/Game%20demo.gif "Snapshot")
+
+*Note: Replace the above placeholder image with your actual game screenshot or GIF when available.*
+
 ## Features
 
 - Classic Tetris gameplay
