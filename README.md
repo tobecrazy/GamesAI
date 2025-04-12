@@ -77,6 +77,34 @@ This is a Tetris game implemented in Python using the Pygame library.
     - `block.py`: Block class (Tetromino implementation)
     - `board.py`: Board class (game board and collision detection)
 
+### Tree
+
+```
+tetris/
+│
+├── assets/
+│   ├── background_music.mp3
+│   ├── clear.wav
+│   ├── drop.wav
+│   ├── gameover.wav
+│   └── rotate.wav
+│
+├── game/
+│   ├── components/
+│   │   ├── __init__.py
+│   │   ├── block.py
+│   │   └── board.py
+│   │
+│   ├── __init__.py
+│   ├── game.py
+│   └── sound.py
+│
+├── README.md
+├── requirements.txt
+└── tetris.py
+```
+
+
 ## Assets
 
 Make sure to place your sound files in an `assets` folder:
