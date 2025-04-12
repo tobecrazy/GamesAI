@@ -16,6 +16,7 @@ class Game:
         self.fall_time = 0
         self.fall_speed = 0.5  # Initial fall speed
         self.paused = False
+        self.clearing_animation = False
         
         self.sound = Sound()
         self.sound.start_background_music()
@@ -37,7 +38,7 @@ class Game:
     
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
-            if not self.game_over and not self.paused:
+            if not self.game_over and not self.paused and not self.clearing_animation:
                 if event.key == pygame.K_LEFT:
                     self.move_block(-1, 0)
                 elif event.key == pygame.K_RIGHT:
@@ -78,9 +79,10 @@ class Game:
         self.board.place_block(self.current_block)
         lines_cleared = self.board.clear_lines()
         if lines_cleared > 0:
+            self.clearing_animation = True
             self.sound.play_clear()
-        self.update_score(lines_cleared)
-        self.generate_new_block()
+        else:
+            self.generate_new_block()
     
     def update_score(self, lines_cleared):
         self.lines_cleared += lines_cleared
@@ -90,16 +92,27 @@ class Game:
     
     def update(self):
         if not self.game_over and not self.paused:
-            now = pygame.time.get_ticks()
-            if now - self.fall_time > self.fall_speed * 1000:
-                self.fall_time = now
-                self.move_block(0, 1)
+            if self.clearing_animation:
+                self.board.update_clearing_animation()
+                if self.board.is_animation_complete():
+                    self.finish_line_clear()
+            else:
+                now = pygame.time.get_ticks()
+                if now - self.fall_time > self.fall_speed * 1000:
+                    self.fall_time = now
+                    self.move_block(0, 1)
+    
+    def finish_line_clear(self):
+        self.clearing_animation = False
+        lines_cleared = self.board.lines_cleared
+        self.update_score(lines_cleared)
+        self.generate_new_block()
     
     def draw(self):
         self.board.draw(self.screen)
-        if self.current_block:
+        if self.current_block and not self.clearing_animation:
             self.current_block.draw(self.screen)
-        self.board.draw_ghost(self.screen, self.current_block)
+            self.board.draw_ghost(self.screen, self.current_block)
     
     def restart_game(self):
         self.__init__(self.screen)

@@ -21,19 +21,19 @@ def draw_text(text, font, color, x, y):
 
 def draw_menu():
     screen.fill((0, 0, 0))
-    draw_text("TETRIS", large_font, (255, 255, 255), WIDTH // 2, HEIGHT // 4)
-    draw_text("Press ENTER to start", font, (255, 255, 255), WIDTH // 2, HEIGHT // 2)
-    draw_text("Press Q to quit", font, (255, 255, 255), WIDTH // 2, HEIGHT // 2 + 50)
+    draw_text("TETRIS", large_font, (0, 255, 0), WIDTH // 2, HEIGHT // 4)  # Green
+    draw_text("Press ENTER to start", font, (0, 0, 255), WIDTH // 2, HEIGHT // 2)  # Blue
+    draw_text("Press Q to quit", font, (255, 255, 0), WIDTH // 2, HEIGHT // 2 + 50)  # Yellow
 
 def draw_game_over():
     overlay = pygame.Surface((WIDTH, HEIGHT))
     overlay.set_alpha(128)
     overlay.fill((0, 0, 0))
     screen.blit(overlay, (0, 0))
-    draw_text("GAME OVER", large_font, (255, 0, 0), WIDTH // 2, HEIGHT // 3)
-    draw_text(f"Score: {game.score}", font, (255, 255, 255), WIDTH // 2, HEIGHT // 2)
-    draw_text("Press R to restart", font, (255, 255, 255), WIDTH // 2, HEIGHT // 2 + 50)
-    draw_text("Press Q to quit", font, (255, 255, 255), WIDTH // 2, HEIGHT // 2 + 100)
+    draw_text("GAME OVER", large_font, (255, 0, 0), WIDTH // 2, HEIGHT // 3)  # Red
+    draw_text(f"Score: {game.score}", font, (0, 255, 0), WIDTH // 2, HEIGHT // 2)  # Green
+    draw_text("Press R to restart", font, (0, 0, 255), WIDTH // 2, HEIGHT // 2 + 50)  # Blue
+    draw_text("Press Q to quit", font, (255, 255, 0), WIDTH // 2, HEIGHT // 2 + 100)  # Yellow
 
 def draw_pause():
     overlay = pygame.Surface((WIDTH, HEIGHT))
@@ -71,7 +71,8 @@ while True:
                     pygame.quit()
                     sys.exit()
         elif state == PLAYING:
-            game.handle_event(event)
+            if not game.clearing_animation:
+                game.handle_event(event)
             if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
                 game.sound.stop_background_music()
                 game = None
@@ -95,8 +96,8 @@ while True:
         game.draw()
         
         # Draw score, level, and lines cleared
-        draw_text(f"Score: {game.score}", font, (255, 255, 255), WIDTH - 100, 50)
-        draw_text(f"Level: {game.level}", font, (255, 255, 255), WIDTH - 100, 100)
+        draw_text(f"Score: {game.score}", font, (0, 255, 0), WIDTH - 100, 50)  # Green
+        draw_text(f"Level: {game.level}", font, (0, 0, 255), WIDTH - 100, 100)  # Blue
         draw_text(f"Lines: {game.lines_cleared}", font, (255, 255, 255), WIDTH - 100, 150)
         
         # Draw next block preview
@@ -123,4 +124,4 @@ while True:
         draw_game_over()
     
     pygame.display.flip()
-    clock.tick(60)  # 60 FPS
+    clock.tick(120)  # 120 FPS for smoother animation

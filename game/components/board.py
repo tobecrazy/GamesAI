@@ -5,9 +5,12 @@ class Board:
     WIDTH = 10
     HEIGHT = 20
     CELL_SIZE = 30
+    ANIMATION_STEPS = 10  # Number of steps for the clearing animation
 
     def __init__(self):
         self.grid = [[None for _ in range(self.WIDTH)] for _ in range(self.HEIGHT)]
+        self.clearing_lines = []  # List of (y, progress) tuples for lines being cleared
+        self.lines_cleared = 0  # Track the number of lines cleared
 
     def is_valid_position(self, block):
         for y, row in enumerate(block.shape):
@@ -27,16 +30,26 @@ class Board:
                     self.grid[block.y + y][block.x + x] = block.color
 
     def clear_lines(self):
-        lines_cleared = 0
-        y = self.HEIGHT - 1
-        while y >= 0:
+        self.lines_cleared = 0
+        for y in range(self.HEIGHT - 1, -1, -1):
             if all(cell is not None for cell in self.grid[y]):
-                del self.grid[y]
-                self.grid.insert(0, [None for _ in range(self.WIDTH)])
-                lines_cleared += 1
-            else:
-                y -= 1
-        return lines_cleared
+                self.clearing_lines.append((y, 0))  # Add line to be cleared with 0 progress
+                self.lines_cleared += 1
+        return self.lines_cleared
+
+    def update_clearing_animation(self):
+        for i, (y, progress) in enumerate(self.clearing_lines):
+            self.clearing_lines[i] = (y, progress + 1)
+        
+        # Remove completed animations and clear lines
+        lines_to_remove = [y for y, progress in self.clearing_lines if progress >= self.ANIMATION_STEPS]
+        for y in lines_to_remove:
+            del self.grid[y]
+            self.grid.insert(0, [None for _ in range(self.WIDTH)])
+        self.clearing_lines = [(y, p) for y, p in self.clearing_lines if p < self.ANIMATION_STEPS]
+
+    def is_animation_complete(self):
+        return len(self.clearing_lines) == 0
 
     def draw(self, screen):
         for y, row in enumerate(self.grid):
@@ -48,11 +61,21 @@ class Board:
                     1
                 )
                 if cell:
-                    pygame.draw.rect(
-                        screen,
-                        cell,
-                        (x * self.CELL_SIZE + 1, y * self.CELL_SIZE + 1, self.CELL_SIZE - 2, self.CELL_SIZE - 2)
-                    )
+                    if any(cl_y == y for cl_y, _ in self.clearing_lines):
+                        # Draw clearing animation
+                        progress = next(p for cl_y, p in self.clearing_lines if cl_y == y)
+                        alpha = int(255 * (1 - progress / self.ANIMATION_STEPS))
+                        color = (*cell, alpha)
+                        surface = pygame.Surface((self.CELL_SIZE - 2, self.CELL_SIZE - 2), pygame.SRCALPHA)
+                        pygame.draw.rect(surface, color, (0, 0, self.CELL_SIZE - 2, self.CELL_SIZE - 2))
+                        screen.blit(surface, (x * self.CELL_SIZE + 1, y * self.CELL_SIZE + 1))
+                    else:
+                        # Draw normal block
+                        pygame.draw.rect(
+                            screen,
+                            cell,
+                            (x * self.CELL_SIZE + 1, y * self.CELL_SIZE + 1, self.CELL_SIZE - 2, self.CELL_SIZE - 2)
+                        )
 
     def get_ghost_position(self, block):
         ghost_block = Block(block.shape, block.color)
