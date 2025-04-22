@@ -64,8 +64,7 @@ class Game:
                 self.restart_game()
             elif event.key == pygame.K_p:
                 self.toggle_pause()
-            elif event.key == pygame.K_m:
-                self.toggle_mute()
+            # M key is now handled in the main game loop
 
     def move_block(self, dx, dy):
         self.current_block.move(dx, dy)

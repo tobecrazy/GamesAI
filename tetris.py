@@ -1,6 +1,6 @@
 import pygame
 import sys
-import time
+import math
 from game.game import Game
 from game.database import TetrisDatabase
 
@@ -15,6 +15,11 @@ pygame.display.set_caption("Tetris")
 # Set up fonts
 font = pygame.font.Font(None, 36)
 large_font = pygame.font.Font(None, 72)
+small_font = pygame.font.Font(None, 24)
+
+# Menu animation variables
+menu_animation_time = 0
+menu_hover = None
 
 def draw_text(text, font, color, x, y):
     surface = font.render(text, True, color)
@@ -22,23 +27,136 @@ def draw_text(text, font, color, x, y):
     screen.blit(surface, rect)
 
 def draw_menu():
-    screen.fill((0, 0, 0))
-    draw_text("TETRIS", large_font, (0, 255, 0), WIDTH // 2, HEIGHT // 4)  # Green
-    draw_text("Press ENTER to start", font, (0, 0, 255), WIDTH // 2, HEIGHT // 2)  # Blue
-    draw_text("Press Q to quit", font, (255, 255, 0), WIDTH // 2, HEIGHT // 2 + 50)  # Yellow
+    # Draw gradient background
+    for y in range(HEIGHT):
+        # Create a gradient from dark blue to black
+        color_value = max(0, int(40 * (1 - y / HEIGHT)))
+        pygame.draw.line(screen, (0, color_value, color_value * 2), (0, y), (WIDTH, y))
 
-    # Show mute status if applicable
+    # Calculate animation offset based on time
+    global menu_animation_time
+    menu_animation_time = (menu_animation_time + 0.5) % 360
+    offset = int(5 * math.sin(math.radians(menu_animation_time)))
+
+    # Draw tetris blocks border around title - moved higher
+    title_rect = pygame.Rect(WIDTH // 2 - 150, HEIGHT // 6 - 30, 300, 120)
+    block_size = 20
+
+    # Draw tetromino-like border
+    for i in range(title_rect.width // block_size + 1):
+        # Top and bottom borders with different colors
+        if i % 4 == 0:
+            color = (255, 0, 0)  # Red
+        elif i % 4 == 1:
+            color = (0, 255, 0)  # Green
+        elif i % 4 == 2:
+            color = (0, 0, 255)  # Blue
+        else:
+            color = (255, 255, 0)  # Yellow
+
+        # Top border
+        pygame.draw.rect(screen, color,
+                        (title_rect.left + i * block_size, title_rect.top, block_size, block_size))
+        # Bottom border
+        pygame.draw.rect(screen, color,
+                        (title_rect.left + i * block_size, title_rect.bottom - block_size, block_size, block_size))
+
+    for i in range(title_rect.height // block_size):
+        # Left and right borders with different colors
+        if i % 4 == 0:
+            color = (255, 0, 255)  # Purple
+        elif i % 4 == 1:
+            color = (0, 255, 255)  # Cyan
+        elif i % 4 == 2:
+            color = (255, 165, 0)  # Orange
+        else:
+            color = (255, 255, 255)  # White
+
+        # Left border
+        pygame.draw.rect(screen, color,
+                        (title_rect.left, title_rect.top + i * block_size, block_size, block_size))
+        # Right border
+        pygame.draw.rect(screen, color,
+                        (title_rect.right - block_size, title_rect.top + i * block_size, block_size, block_size))
+
+    # Draw title with shadow effect - moved higher
+    draw_text("TETRIS", large_font, (30, 30, 30), WIDTH // 2 + 3, HEIGHT // 6 + 3 + offset)  # Shadow
+    draw_text("TETRIS", large_font, (0, 255, 0), WIDTH // 2, HEIGHT // 6 + offset)  # Green
+
+    # Draw menu options as buttons
+    button_width, button_height = 300, 50
+    button_x = WIDTH // 2 - button_width // 2
+
+    # Start button - positioned with more space from title
+    start_button = pygame.Rect(button_x, HEIGHT // 3 + 30, button_width, button_height)
+    button_color = (0, 100, 200) if menu_hover == "start" else (0, 70, 150)
+    pygame.draw.rect(screen, button_color, start_button, border_radius=10)
+    pygame.draw.rect(screen, (0, 150, 255), start_button, 3, border_radius=10)
+    draw_text("PRESS ENTER TO START", font, (255, 255, 255), WIDTH // 2, HEIGHT // 3 + 30 + button_height // 2 - 5)
+
+    # Quit button
+    quit_button = pygame.Rect(button_x, HEIGHT // 3 + 100, button_width, button_height)
+    button_color = (200, 50, 50) if menu_hover == "quit" else (150, 30, 30)
+    pygame.draw.rect(screen, button_color, quit_button, border_radius=10)
+    pygame.draw.rect(screen, (255, 100, 100), quit_button, 3, border_radius=10)
+    draw_text("PRESS Q TO QUIT", font, (255, 255, 255), WIDTH // 2, HEIGHT // 3 + 100 + button_height // 2 - 5)
+
+    # Sound button
+    sound_button = pygame.Rect(button_x, HEIGHT // 3 + 170, button_width, button_height)
+    button_color = (150, 50, 150) if menu_hover == "sound" else (100, 30, 100)
+    pygame.draw.rect(screen, button_color, sound_button, border_radius=10)
+    pygame.draw.rect(screen, (200, 100, 200), sound_button, 3, border_radius=10)
+
+    # Show mute status
     if game:
-        mute_status = "Sound: OFF (Press M to unmute)" if is_muted else "Sound: ON (Press M to mute)"
-        draw_text(mute_status, font, (255, 255, 255), WIDTH // 2, HEIGHT // 2 + 100)
+        mute_status = "SOUND: OFF (PRESS M)" if is_muted else "SOUND: ON (PRESS M)"
+    else:
+        mute_status = "PRESS M TO SET SOUND"
+    draw_text(mute_status, font, (255, 255, 255), WIDTH // 2, HEIGHT // 3 + 170 + button_height // 2 - 5)
 
-    # Display top 10 scores at the bottom
+    # Display top scores in a table format
     high_scores = db.get_high_scores(5)  # Get top 5 for the menu
     if high_scores:
-        draw_text("TOP SCORES", font, (255, 215, 0), WIDTH // 2, HEIGHT - 200)  # Gold
-        for i, (name, score, _, _, _, _) in enumerate(high_scores[:5]):
-            y_pos = HEIGHT - 160 + i * 30
-            draw_text(f"{name}: {score}", font, (255, 255, 255), WIDTH // 2, y_pos)
+        # Calculate panel position to avoid overlap with buttons
+        panel_y = HEIGHT // 3 + 240  # Position after the sound button
+        panel_height = 180  # Reduced height
+
+        # Draw a semi-transparent panel for scores
+        scores_panel = pygame.Surface((WIDTH - 100, panel_height))
+        scores_panel.set_alpha(150)
+        scores_panel.fill((0, 0, 50))
+        screen.blit(scores_panel, (50, panel_y))
+
+        # Draw border for the panel
+        pygame.draw.rect(screen, (0, 150, 255), pygame.Rect(50, panel_y, WIDTH - 100, panel_height), 2)
+
+        # Draw header
+        draw_text("TOP SCORES", font, (255, 215, 0), WIDTH // 2, panel_y + 20)  # Gold
+
+        # Draw table headers
+        draw_text("RANK", small_font, (200, 200, 200), WIDTH // 5, panel_y + 50)
+        draw_text("PLAYER", small_font, (200, 200, 200), 2 * WIDTH // 5, panel_y + 50)
+        draw_text("SCORE", small_font, (200, 200, 200), 3 * WIDTH // 5, panel_y + 50)
+        draw_text("GRADE", small_font, (200, 200, 200), 4 * WIDTH // 5, panel_y + 50)
+
+        # Draw horizontal line under headers
+        pygame.draw.line(screen, (100, 100, 100), (70, panel_y + 65), (WIDTH - 70, panel_y + 65), 1)
+
+        for i, (name, score, _, _, grade, _) in enumerate(high_scores[:5]):
+            y_pos = panel_y + 90 + i * 25  # Reduced spacing between rows
+            rank_color = (255, 215, 0) if i < 3 else (200, 200, 200)  # Gold for top 3
+
+            # Alternate row colors for better readability
+            if i % 2 == 0:
+                pygame.draw.rect(screen, (0, 0, 80), pygame.Rect(60, y_pos - 12, WIDTH - 120, 25))
+
+            draw_text(f"#{i+1}", small_font, rank_color, WIDTH // 5, y_pos)
+            draw_text(name, small_font, (255, 255, 255), 2 * WIDTH // 5, y_pos)
+            draw_text(str(score), small_font, (0, 255, 0), 3 * WIDTH // 5, y_pos)
+            draw_text(grade, small_font, (255, 215, 0), 4 * WIDTH // 5, y_pos)
+
+    # Draw version info
+    draw_text("v1.0.0", small_font, (100, 100, 100), WIDTH - 40, HEIGHT - 20)
 
 def draw_game_over():
     overlay = pygame.Surface((WIDTH, HEIGHT))
@@ -84,7 +202,7 @@ def draw_pause():
     overlay.fill((0, 0, 0))
     screen.blit(overlay, (0, 0))
     draw_text("PAUSED", large_font, (255, 255, 255), WIDTH // 2, HEIGHT // 2)
-    draw_text("Press P to resume", font, (255, 255, 255), WIDTH // 2, HEIGHT // 2 + 50)
+    draw_text("Press P or S to resume", font, (255, 255, 255), WIDTH // 2, HEIGHT // 2 + 50)
 
     # Show mute status
     mute_text = "Sound: OFF (Press M to unmute)" if is_muted else "Sound: ON (Press M to mute)"
@@ -244,6 +362,39 @@ while True:
             sys.exit()
 
         if state == MENU:
+            # Handle mouse hover for buttons
+            if event.type == pygame.MOUSEMOTION:
+                mouse_pos = pygame.mouse.get_pos()
+                # Start button
+                start_button = pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 30, 300, 50)
+                if start_button.collidepoint(mouse_pos):
+                    menu_hover = "start"
+                # Quit button
+                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 100, 300, 50).collidepoint(mouse_pos):
+                    menu_hover = "quit"
+                # Sound button
+                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 170, 300, 50).collidepoint(mouse_pos):
+                    menu_hover = "sound"
+                else:
+                    menu_hover = None
+
+            # Handle mouse clicks
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                # Start button
+                if pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 30, 300, 50).collidepoint(mouse_pos):
+                    input_text = ""
+                    input_active = True
+                    state = START_NAME_INPUT
+                # Quit button
+                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 100, 300, 50).collidepoint(mouse_pos):
+                    pygame.quit()
+                    sys.exit()
+                # Sound button
+                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 170, 300, 50).collidepoint(mouse_pos) and game:
+                    is_muted = game.toggle_mute()
+
+            # Handle keyboard input
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     input_text = ""
@@ -255,12 +406,19 @@ while True:
                 elif event.key == pygame.K_m and game:
                     is_muted = game.toggle_mute()
         elif state == PLAYING:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_m:
+                    is_muted = game.toggle_mute()
+                elif event.key == pygame.K_s:
+                    # Add S key as an alternative to pause/resume
+                    game.toggle_pause()
+                elif event.key == pygame.K_q:
+                    game.sound.stop_background_music()
+                    game = None
+                    state = MENU
+
             if not game.clearing_animation:
                 game.handle_event(event)
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
-                game.sound.stop_background_music()
-                game = None
-                state = MENU
         elif state == GAME_OVER:
             if pygame.time.get_ticks() - game_over_time > 1000:  # 1 second delay
                 if event.type == pygame.KEYDOWN:
@@ -364,12 +522,16 @@ while True:
         draw_text(f"Level: {game.level}", font, (0, 0, 255), WIDTH - 100, 100)  # Blue
         draw_text(f"Lines: {game.lines_cleared}", font, (255, 255, 255), WIDTH - 100, 150)  # White
 
-        # Draw mute status
+        # Draw mute status and game status
         mute_status = "M: Sound OFF" if is_muted else "M: Sound ON"
         draw_text(mute_status, font, (255, 255, 255), WIDTH - 100, 200)
 
+        # Draw game status (P/S: Pause)
+        game_status = "P/S: Pause" if not game.paused else "P/S: Resume"
+        draw_text(game_status, font, (255, 255, 255), WIDTH - 100, 230)
+
         # Draw next block preview
-        draw_text("Next:", font, (255, 255, 255), WIDTH - 100, 250)
+        draw_text("Next:", font, (255, 255, 255), WIDTH - 100, 280)
         if game.next_block:
             for y, row in enumerate(game.next_block.shape):
                 for x, cell in enumerate(row):
@@ -377,7 +539,7 @@ while True:
                         pygame.draw.rect(
                             screen,
                             game.next_block.color,
-                            (WIDTH - 150 + x * 30, 300 + y * 30, 30, 30)
+                            (WIDTH - 150 + x * 30, 330 + y * 30, 30, 30)
                         )
 
         if game.paused:

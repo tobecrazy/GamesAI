@@ -18,7 +18,7 @@ This is a Tetris game implemented in Python using the Pygame library.
 - Sound effects and background music with mute option (press 'M' to toggle)
 - Start menu with top scores display
 - Player name input at game start (defaults to "Anonymous" if empty)
-- Pause functionality
+- Pause functionality (press 'P' or 'S' to toggle)
 - Game over screen with top scores display
 - Scrolling top 10 players leaderboard (continuous animation until any key is pressed)
 - Simultaneous line clearing animation for multiple rows
@@ -58,11 +58,11 @@ This is a Tetris game implemented in Python using the Pygame library.
 - Down Arrow: Soft drop
 - Up Arrow: Rotate block clockwise
 - Spacebar: Hard drop
-- P: Pause/Resume game
+- P or S: Pause/Resume game
 - M: Toggle mute for all sounds and music
 - R: Restart game (when game over)
 - Q: Quit to main menu (during gameplay or game over)
-- S: View scrolling top 10 players (when game over)
+- S: Pause/Resume game (during gameplay) or view scrolling top 10 players (when game over)
 - N: Enter name to save score (when game over)
 - H: View high scores (when game over)
 - B: Go back from high scores screen
@@ -160,6 +160,16 @@ You can easily customize various aspects of the game by modifying the constants 
 
 ## Recent Updates
 
+### Enhanced Menu System
+- Added visually appealing gradient background to the menu
+- Created animated Tetris-themed border around the title
+- Implemented interactive button-like elements with hover effects
+- Added mouse support for menu navigation
+- Improved high scores display with proper table formatting
+- Added visual indicators for top-ranked players
+- Fixed menu layout to prevent text and UI element overlapping
+- Optimized spacing between menu elements for better readability
+
 ### Sound System Enhancements
 - Added mute functionality (press 'M' to toggle all sounds and music)
 - Mute status is displayed on all game screens
@@ -169,10 +179,13 @@ You can easily customize various aspects of the game by modifying the constants 
 - Added scrolling animation for top 10 players display
 - Scores continuously scroll from bottom to top until any key is pressed
 - Fixed UI elements positioning to ensure all text is fully visible
+- Added shadow effects for better text readability
 
 ### Gameplay Enhancements
 - Fixed bug where multiple completed rows wouldn't disappear simultaneously
 - Improved line clearing animation to handle multiple rows at once
 - Enhanced player name input with clearer instructions
+- Added alternative pause/resume control with 'S' key
+- Added game status display showing current pause/resume state
 
 Enjoy playing Tetris!
