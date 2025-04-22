@@ -7,24 +7,47 @@ class Sound:
         self.clear_sound = pygame.mixer.Sound("assets/clear.mp3")
         self.drop_sound = pygame.mixer.Sound("assets/drop.mp3")
         self.game_over_sound = pygame.mixer.Sound("assets/gameover.mp3")
-        
+
         pygame.mixer.music.load("assets/background.mp3")
         pygame.mixer.music.set_volume(0.5)
-    
+
+        # Sound state
+        self.muted = False
+        self.music_volume = 0.5
+        self.effects_volume = 1.0
+
     def play_rotate(self):
-        self.rotate_sound.play()
-    
+        if not self.muted:
+            self.rotate_sound.play()
+
     def play_clear(self):
-        self.clear_sound.play()
-    
+        if not self.muted:
+            self.clear_sound.play()
+
     def play_drop(self):
-        self.drop_sound.play()
-    
+        if not self.muted:
+            self.drop_sound.play()
+
     def play_game_over(self):
-        self.game_over_sound.play()
-    
+        if not self.muted:
+            self.game_over_sound.play()
+
     def start_background_music(self):
         pygame.mixer.music.play(-1)  # -1 means loop indefinitely
-    
+        if self.muted:
+            pygame.mixer.music.set_volume(0)
+        else:
+            pygame.mixer.music.set_volume(self.music_volume)
+
     def stop_background_music(self):
         pygame.mixer.music.stop()
+
+    def toggle_mute(self):
+        self.muted = not self.muted
+        if self.muted:
+            # Store current volume and set to 0
+            pygame.mixer.music.set_volume(0)
+        else:
+            # Restore volume
+            pygame.mixer.music.set_volume(self.music_volume)
+        return self.muted

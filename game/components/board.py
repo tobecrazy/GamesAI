@@ -38,15 +38,24 @@ class Board:
         return self.lines_cleared
 
     def update_clearing_animation(self):
+        # Update progress for all lines
         for i, (y, progress) in enumerate(self.clearing_lines):
             self.clearing_lines[i] = (y, progress + 1)
-        
-        # Remove completed animations and clear lines
-        lines_to_remove = [y for y, progress in self.clearing_lines if progress >= self.ANIMATION_STEPS]
-        for y in lines_to_remove:
-            del self.grid[y]
-            self.grid.insert(0, [None for _ in range(self.WIDTH)])
-        self.clearing_lines = [(y, p) for y, p in self.clearing_lines if p < self.ANIMATION_STEPS]
+
+        # Check if all animations have completed
+        all_completed = all(progress >= self.ANIMATION_STEPS for _, progress in self.clearing_lines)
+
+        if all_completed and self.clearing_lines:
+            # Sort lines in descending order to avoid index shifting when removing lines
+            lines_to_remove = sorted([y for y, _ in self.clearing_lines], reverse=True)
+
+            # Remove all completed lines at once
+            for y in lines_to_remove:
+                del self.grid[y]
+                self.grid.insert(0, [None for _ in range(self.WIDTH)])
+
+            # Clear the animation list
+            self.clearing_lines = []
 
     def is_animation_complete(self):
         return len(self.clearing_lines) == 0
