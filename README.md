@@ -27,8 +27,8 @@ This is a Tetris game implemented in Python using the Pygame library.
 
 ## Requirements
 
-- Python 3.x
-- Pygame 2.3.0
+- Python 3.6+
+- pygame >=2.6.1
 - SQLite3 (included in Python standard library)
 
 ## Installation
