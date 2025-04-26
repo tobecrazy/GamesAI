@@ -2,9 +2,7 @@
 
 This is a Tetris game implemented in Python using the Pygame library.
 
-![Tetris Game Demo](https://github.com/tobecrazy/GamesAI/blob/main/assets/Game%20demo.gif "Snapshot")
-
-*Note: Replace the above placeholder image with your actual game screenshot or GIF when available.*
+![Tetris Game Demo](assets/Game demo.gif "Gameplay Demo")
 
 ## Features
 
@@ -102,14 +100,15 @@ This is a Tetris game implemented in Python using the Pygame library.
 ### Tree
 
 ```
-tetris/
+GamesAI/
 │
 ├── assets/
-│   ├── background_music.mp3
-│   ├── clear.wav
-│   ├── drop.wav
-│   ├── gameover.wav
-│   └── rotate.wav
+│   ├── background.mp3
+│   ├── clear.mp3
+│   ├── drop.mp3
+│   ├── gameover.mp3
+│   ├── rotate.mp3
+│   └── Game demo.gif
 │
 ├── game/
 │   ├── components/
@@ -122,8 +121,11 @@ tetris/
 │   ├── game.py
 │   └── sound.py
 │
+├── .env
+├── .gitignore
 ├── README.md
 ├── requirements.txt
+├── splunk_mcp.log
 ├── tetris_scores.db
 └── tetris.py
 ```
@@ -133,11 +135,11 @@ tetris/
 
 Make sure to place your sound files in an `assets` folder:
 
-- `assets/rotate.wav`
-- `assets/clear.wav`
-- `assets/drop.wav`
-- `assets/gameover.wav`
-- `assets/background_music.mp3`
+- `assets/rotate.mp3`
+- `assets/clear.mp3` 
+- `assets/drop.mp3`
+- `assets/gameover.mp3`
+- `assets/background.mp3`
 
 ## Customization
 
