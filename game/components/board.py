@@ -9,7 +9,8 @@ class Board:
 
     def __init__(self):
         self.grid = [[None for _ in range(self.WIDTH)] for _ in range(self.HEIGHT)]
-        self.clearing_lines = []  # List of (y, progress) tuples for lines being cleared
+        self.clearing_lines = []  # List of y coordinates for lines being cleared
+        self.animation_progress = 0  # Shared progress for all clearing animations
         self.lines_cleared = 0  # Track the number of lines cleared
 
     def is_valid_position(self, block):
@@ -31,37 +32,39 @@ class Board:
 
     def clear_lines(self):
         self.lines_cleared = 0
-        # First pass: identify all full lines
+        # Identify all full lines
         full_lines = []
         for y in range(self.HEIGHT - 1, -1, -1):
             if all(cell is not None for cell in self.grid[y]):
                 full_lines.append(y)
                 self.lines_cleared += 1
         
-        # Second pass: add them to clearing_lines in order
-        for y in sorted(full_lines):
-            self.clearing_lines.append((y, 0))
+        if full_lines:
+            self.clearing_lines = full_lines
+            self.animation_progress = 0
             
         return self.lines_cleared
 
     def update_clearing_animation(self):
-        # Update progress for all lines simultaneously
         if not self.clearing_lines:
             return
             
-        # Get current progress (all lines progress together)
-        progress = self.clearing_lines[0][1] + 1
+        self.animation_progress += 1
         
-        if progress >= self.ANIMATION_STEPS:
-            # Remove all completed lines at once in descending order
-            lines_to_remove = [y for y, _ in self.clearing_lines]
-            for y in sorted(lines_to_remove, reverse=True):
+        if self.animation_progress >= self.ANIMATION_STEPS:
+            # Remove all cleared lines and insert new rows at top
+            # Sort lines in descending order first
+            sorted_lines = sorted(self.clearing_lines, reverse=True)
+            
+            # Remove all marked lines
+            for y in sorted_lines:
                 del self.grid[y]
+            
+            # Add new empty rows at the top equal to the number of cleared lines
+            for _ in range(len(sorted_lines)):
                 self.grid.insert(0, [None for _ in range(self.WIDTH)])
             self.clearing_lines = []
-        else:
-            # Update all lines to same progress
-            self.clearing_lines = [(y, progress) for y, _ in self.clearing_lines]
+            self.animation_progress = 0
 
     def is_animation_complete(self):
         return len(self.clearing_lines) == 0
@@ -76,10 +79,9 @@ class Board:
                     1
                 )
                 if cell:
-                    if any(cl_y == y for cl_y, _ in self.clearing_lines):
-                        # Draw clearing animation
-                        progress = next(p for cl_y, p in self.clearing_lines if cl_y == y)
-                        alpha = int(255 * (1 - progress / self.ANIMATION_STEPS))
+                    if y in self.clearing_lines:
+                        # Draw clearing animation using shared progress
+                        alpha = int(255 * (1 - self.animation_progress / self.ANIMATION_STEPS))
                         color = (*cell, alpha)
                         surface = pygame.Surface((self.CELL_SIZE - 2, self.CELL_SIZE - 2), pygame.SRCALPHA)
                         pygame.draw.rect(surface, color, (0, 0, self.CELL_SIZE - 2, self.CELL_SIZE - 2))
