@@ -417,7 +417,7 @@ while True:
                     game = None
                     state = MENU
 
-            if not game.clearing_animation:
+            if game and not game.clearing_animation:
                 game.handle_event(event)
         elif state == GAME_OVER:
             if pygame.time.get_ticks() - game_over_time > 1000:  # 1 second delay
