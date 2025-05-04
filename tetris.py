@@ -94,15 +94,27 @@ def draw_menu():
     pygame.draw.rect(screen, (0, 150, 255), start_button, 3, border_radius=10)
     draw_text("PRESS ENTER TO START", font, (255, 255, 255), WIDTH // 2, HEIGHT // 3 + 30 + button_height // 2 - 5)
 
+    # Load button (only shown if there are saved games)
+    saved_games = db.get_saved_games()
+    if saved_games:
+        load_button = pygame.Rect(button_x, HEIGHT // 3 + 100, button_width, button_height)
+        button_color = (100, 200, 100) if menu_hover == "load" else (70, 150, 70)
+        pygame.draw.rect(screen, button_color, load_button, border_radius=10)
+        pygame.draw.rect(screen, (150, 255, 150), load_button, 3, border_radius=10)
+        draw_text("PRESS L TO LOAD GAME", font, (255, 255, 255), WIDTH // 2, HEIGHT // 3 + 100 + button_height // 2 - 5)
+        next_button_y = 170
+    else:
+        next_button_y = 100
+
     # Quit button
-    quit_button = pygame.Rect(button_x, HEIGHT // 3 + 100, button_width, button_height)
+    quit_button = pygame.Rect(button_x, HEIGHT // 3 + next_button_y + 70, button_width, button_height)
     button_color = (200, 50, 50) if menu_hover == "quit" else (150, 30, 30)
     pygame.draw.rect(screen, button_color, quit_button, border_radius=10)
     pygame.draw.rect(screen, (255, 100, 100), quit_button, 3, border_radius=10)
-    draw_text("PRESS Q TO QUIT", font, (255, 255, 255), WIDTH // 2, HEIGHT // 3 + 100 + button_height // 2 - 5)
+    draw_text("PRESS Q TO QUIT", font, (255, 255, 255), WIDTH // 2, HEIGHT // 3 + next_button_y + 70 + button_height // 2 - 5)
 
     # Sound button
-    sound_button = pygame.Rect(button_x, HEIGHT // 3 + 170, button_width, button_height)
+    sound_button = pygame.Rect(button_x, HEIGHT // 3 + next_button_y + 140, button_width, button_height)
     button_color = (150, 50, 150) if menu_hover == "sound" else (100, 30, 100)
     pygame.draw.rect(screen, button_color, sound_button, border_radius=10)
     pygame.draw.rect(screen, (200, 100, 200), sound_button, 3, border_radius=10)
@@ -112,7 +124,15 @@ def draw_menu():
         mute_status = "SOUND: OFF (PRESS M)" if is_muted else "SOUND: ON (PRESS M)"
     else:
         mute_status = "PRESS M TO SET SOUND"
-    draw_text(mute_status, font, (255, 255, 255), WIDTH // 2, HEIGHT // 3 + 170 + button_height // 2 - 5)
+    draw_text(mute_status, font, (255, 255, 255), WIDTH // 2, HEIGHT // 3 + next_button_y + 140 + button_height // 2 - 5)
+
+    # Save button (only shown when in game)
+    if game and not game.game_over:
+        save_button = pygame.Rect(button_x, HEIGHT // 3 + next_button_y + 210, button_width, button_height)
+        button_color = (200, 200, 50) if menu_hover == "save" else (150, 150, 30)
+        pygame.draw.rect(screen, button_color, save_button, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 100), save_button, 3, border_radius=10)
+        draw_text("PRESS S TO SAVE GAME", font, (255, 255, 255), WIDTH // 2, HEIGHT // 3 + next_button_y + 210 + button_height // 2 - 5)
 
     # Display top scores in a table format
     high_scores = db.get_high_scores(5)  # Get top 5 for the menu
@@ -340,6 +360,39 @@ def draw_scrolling_scores():
     # Draw instructions
     draw_text("Press any key to return", font, (255, 255, 255), WIDTH // 2, HEIGHT - 40)
 
+def draw_load_game():
+    """Draw the load game menu with enhanced feedback."""
+    screen.fill((0, 0, 0))
+    draw_text("LOAD GAME", large_font, (0, 255, 0), WIDTH // 2, 50)
+    
+    try:
+        saved_games = game.get_saved_games()
+        if not saved_games:
+            draw_text("No saved games found", font, (255, 255, 255), WIDTH // 2, HEIGHT // 2)
+            draw_text("Press ESC to return", font, (255, 255, 255), WIDTH // 2, HEIGHT - 50)
+            return
+            
+        # Draw column headers
+        draw_text("Player", font, (255, 255, 255), WIDTH // 4, 120)
+        draw_text("Saved At", font, (255, 255, 255), 3 * WIDTH // 4, 120)
+        
+        # Highlight most recent save
+        pygame.draw.rect(screen, (50, 50, 50), (WIDTH//4-10, 155, WIDTH//2+20, 40))
+        
+        # Draw saved games
+        for i, (player_name, save_time) in enumerate(saved_games[:5]):
+            y_pos = 170 + i * 40
+            color = (0, 255, 0) if i == 0 else (255, 255, 255)  # Highlight most recent
+            draw_text(player_name, font, color, WIDTH // 4, y_pos)
+            draw_text(save_time, font, color, 3 * WIDTH // 4, y_pos)
+    
+        draw_text("ENTER: Load selected", font, (0, 255, 0), WIDTH // 2, HEIGHT - 100)
+        draw_text("ESC: Cancel", font, (255, 0, 0), WIDTH // 2, HEIGHT - 50)
+        
+    except Exception as e:
+        print(f"Error drawing load menu: {e}")
+        draw_text("ERROR LOADING SAVES", font, (255, 0, 0), WIDTH // 2, HEIGHT//2)
+
 # Game states
 MENU = 0
 PLAYING = 1
@@ -348,6 +401,8 @@ HIGH_SCORES = 3
 NAME_INPUT = 4
 START_NAME_INPUT = 5
 SCROLLING_SCORES = 6
+SAVE_GAME = 7
+LOAD_GAME = 8
 
 state = MENU
 game_over_time = 0
@@ -356,12 +411,94 @@ score_saved = False
 # Main game loop
 clock = pygame.time.Clock()
 while True:
+    # Draw current state
+    if state == MENU:
+        draw_menu()
+    elif state == PLAYING:
+        screen.fill((0, 0, 0))
+        game.update()
+        game.draw()
+    elif state == GAME_OVER:
+        game.draw()
+        draw_game_over()
+    elif state == HIGH_SCORES:
+        draw_high_scores()
+    elif state == NAME_INPUT:
+        draw_name_input()
+    elif state == START_NAME_INPUT:
+        draw_start_name_input()
+    elif state == SCROLLING_SCORES:
+        draw_scrolling_scores()
+    elif state == LOAD_GAME:
+        draw_load_game()
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
-        if state == MENU:
+        elif state == LOAD_GAME:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    state = MENU
+                elif event.key == pygame.K_RETURN:
+                    try:
+                        saved_games = game.get_saved_games()
+                        if not saved_games:
+                            draw_text("NO SAVES FOUND!", font, (255, 0, 0), WIDTH//2, HEIGHT//2)
+                            pygame.display.flip()
+                            pygame.time.delay(1000)
+                            state = MENU
+                            continue
+                            
+                        # Show loading message
+                        screen.fill((0, 0, 0))
+                        draw_text("LOADING...", large_font, (0, 255, 0), WIDTH//2, HEIGHT//2)
+                        pygame.display.flip()
+                        
+                        # Load most recent save
+                        player_name = saved_games[0][0]
+                        if game.load_saved_game(player_name):
+                            # 直接进入游戏状态
+                            state = PLAYING
+                            # 重置游戏显示
+                            screen.fill((0, 0, 0))
+                            game.draw()
+                            pygame.display.flip()
+                            # 恢复游戏音乐
+                            if not is_muted:
+                                game.sound.start_background_music()
+                        else:
+                            raise Exception("Failed to load game state")
+                            
+                    except Exception as e:
+                        print(f"Load error: {e}")
+                        draw_text("LOAD FAILED!", large_font, (255, 0, 0), WIDTH//2, HEIGHT//2)
+                        pygame.display.flip()
+                        pygame.time.delay(1000)
+                        state = MENU
+
+        elif state == MENU:
+            # Handle keyboard input
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_l:
+                    print("L键按下，正在检查存档...")
+                    if not game:
+                        game = Game(screen, "Player")
+                    saved_games = game.get_saved_games()
+                    if saved_games:
+                        print(f"找到{len(saved_games)}个存档，正在加载...")
+                        state = LOAD_GAME
+                        # 显示加载中提示
+                        screen.fill((0,0,0))
+                        draw_text("正在加载存档...", large_font, (0,255,0), WIDTH//2, HEIGHT//2)
+                        pygame.display.flip()
+                    else:
+                        print("错误：没有找到存档")
+                        draw_text("没有存档可加载!", large_font, (255,0,0), WIDTH//2, HEIGHT//2)
+                        pygame.display.flip()
+                        pygame.time.delay(1500)
+            
             # Handle mouse hover for buttons
             if event.type == pygame.MOUSEMOTION:
                 mouse_pos = pygame.mouse.get_pos()
@@ -369,12 +506,18 @@ while True:
                 start_button = pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 30, 300, 50)
                 if start_button.collidepoint(mouse_pos):
                     menu_hover = "start"
+                # Load button
+                elif game and game.get_saved_games() and pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 100, 300, 50).collidepoint(mouse_pos):
+                    menu_hover = "load"
                 # Quit button
-                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 100, 300, 50).collidepoint(mouse_pos):
+                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 170, 300, 50).collidepoint(mouse_pos):
                     menu_hover = "quit"
                 # Sound button
-                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 170, 300, 50).collidepoint(mouse_pos):
+                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 240, 300, 50).collidepoint(mouse_pos):
                     menu_hover = "sound"
+                # Save button
+                elif game and not game.game_over and pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 310, 300, 50).collidepoint(mouse_pos):
+                    menu_hover = "save"
                 else:
                     menu_hover = None
 
@@ -386,13 +529,23 @@ while True:
                     input_text = ""
                     input_active = True
                     state = START_NAME_INPUT
+                # Load button
+                elif game and game.get_saved_games() and pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 100, 300, 50).collidepoint(mouse_pos):
+                    state = LOAD_GAME
                 # Quit button
-                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 100, 300, 50).collidepoint(mouse_pos):
+                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 170, 300, 50).collidepoint(mouse_pos):
                     pygame.quit()
                     sys.exit()
                 # Sound button
-                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 170, 300, 50).collidepoint(mouse_pos) and game:
+                elif pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 240, 300, 50).collidepoint(mouse_pos) and game:
                     is_muted = game.toggle_mute()
+                # Save button
+                elif game and not game.game_over and pygame.Rect(WIDTH // 2 - 150, HEIGHT // 3 + 310, 300, 50).collidepoint(mouse_pos):
+                    if game.save_current_game():
+                        # Show save confirmation
+                        draw_text("GAME SAVED!", font, (0, 255, 0), WIDTH // 2, HEIGHT - 50)
+                        pygame.display.flip()
+                        pygame.time.delay(1000)  # Show for 1 second
 
             # Handle keyboard input
             if event.type == pygame.KEYDOWN:
@@ -400,18 +553,33 @@ while True:
                     input_text = ""
                     input_active = True
                     state = START_NAME_INPUT
+                elif event.key == pygame.K_l and game and game.get_saved_games():
+                    state = LOAD_GAME
                 elif event.key == pygame.K_q:
                     pygame.quit()
                     sys.exit()
                 elif event.key == pygame.K_m and game:
                     is_muted = game.toggle_mute()
+                elif event.key == pygame.K_s and game and not game.game_over:
+                    if game.save_current_game():
+                        # Show save confirmation
+                        draw_text("GAME SAVED!", font, (0, 255, 0), WIDTH // 2, HEIGHT - 50)
+                        pygame.display.flip()
+                        pygame.time.delay(1000)  # Show for 1 second
         elif state == PLAYING:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_m:
                     is_muted = game.toggle_mute()
-                elif event.key == pygame.K_s:
-                    # Add S key as an alternative to pause/resume
+                elif event.key == pygame.K_p:
+                    # P key for pause/resume
                     game.toggle_pause()
+                elif event.key == pygame.K_s:
+                    # S key for save game
+                    if game.save_current_game():
+                        # Show save confirmation
+                        draw_text("GAME SAVED!", font, (0, 255, 0), WIDTH // 2, HEIGHT - 50)
+                        pygame.display.flip()
+                        pygame.time.delay(1000)  # Show for 1 second
                 elif event.key == pygame.K_q:
                     game.sound.stop_background_music()
                     game = None
@@ -419,6 +587,22 @@ while True:
 
             if game and not game.clearing_animation:
                 game.handle_event(event)
+                
+        elif state == LOAD_GAME:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    state = MENU
+                elif event.key == pygame.K_RETURN:
+                    saved_games = game.get_saved_games()
+                    if saved_games:
+                        # Load the most recent save
+                        player_name = saved_games[0][0]
+                        if game.load_saved_game(player_name):
+                            state = PLAYING
+                        else:
+                            draw_text("LOAD FAILED!", font, (255, 0, 0), WIDTH // 2, HEIGHT - 50)
+                            pygame.display.flip()
+                            pygame.time.delay(1000)  # Show for 1 second
         elif state == GAME_OVER:
             if pygame.time.get_ticks() - game_over_time > 1000:  # 1 second delay
                 if event.type == pygame.KEYDOWN:

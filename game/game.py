@@ -3,6 +3,7 @@ from .components.block import Block
 from .components.board import Board
 from .sound import Sound
 from .database import TetrisDatabase
+import json
 
 class Game:
     def __init__(self, screen, player_name="Anonymous"):
@@ -154,3 +155,102 @@ class Game:
     def set_player_name(self, name):
         """Set the player name."""
         self.player_name = name if name else "Anonymous"
+
+    def get_game_state(self):
+        """Serialize current game state to a dictionary."""
+        return {
+            'board': {
+                'grid': self.board.grid,
+                'clearing_lines': self.board.clearing_lines,
+                'animation_progress': self.board.animation_progress,
+                'lines_cleared': self.board.lines_cleared
+            },
+            'current_block': {
+                'shape': self.current_block.shape,
+                'color': self.current_block.color,
+                'x': self.current_block.x,
+                'y': self.current_block.y
+            } if self.current_block else None,
+            'next_block': {
+                'shape': self.next_block.shape,
+                'color': self.next_block.color
+            } if self.next_block else None,
+            'score': self.score,
+            'level': self.level,
+            'lines_cleared': self.lines_cleared,
+            'game_over': self.game_over,
+            'fall_speed': self.fall_speed,
+            'paused': self.paused,
+            'player_name': self.player_name
+        }
+
+    def load_game_state(self, state):
+        """Load game state from a dictionary with validation."""
+        if not state:
+            print("Error: Empty game state provided")
+            return False
+
+        try:
+            # Validate and load board state
+            if 'board' not in state:
+                raise ValueError("Missing board state")
+                
+            self.board.grid = state['board'].get('grid', [[None]*10 for _ in range(20)])
+            self.board.clearing_lines = state['board'].get('clearing_lines', [])
+            self.board.animation_progress = state['board'].get('animation_progress', 0)
+            self.board.lines_cleared = state['board'].get('lines_cleared', 0)
+
+            # Load blocks with validation
+            if 'current_block' in state and state['current_block']:
+                block_data = state['current_block']
+                self.current_block = Block(
+                    block_data.get('shape', [[1]]),
+                    block_data.get('color', [255, 255, 255])
+                )
+                self.current_block.x = block_data.get('x', 0)
+                self.current_block.y = block_data.get('y', 0)
+            else:
+                self.current_block = None
+
+            if 'next_block' in state and state['next_block']:
+                self.next_block = Block(
+                    state['next_block'].get('shape', [[1]]),
+                    state['next_block'].get('color', [255, 255, 255])
+                )
+            else:
+                self.next_block = None
+
+            # Load game stats with defaults
+            self.score = state.get('score', 0)
+            self.level = state.get('level', 1)
+            self.lines_cleared = state.get('lines_cleared', 0)
+            self.game_over = state.get('game_over', False)
+            self.fall_speed = state.get('fall_speed', 0.5)
+            self.paused = state.get('paused', False)
+            self.player_name = state.get('player_name', 'Anonymous')
+
+            print("Successfully loaded game state")
+            return True
+            
+        except Exception as e:
+            print(f"Error loading game state: {e}")
+            # Reset to default state on error
+            self.__init__(self.screen, self.player_name)
+            return False
+
+    def save_current_game(self):
+        """Save current game state to database."""
+        if self.game_over:
+            return False
+        return self.db.save_game(self.player_name, self.get_game_state())
+
+    def load_saved_game(self, player_name):
+        """Load saved game state from database."""
+        state = self.db.load_game(player_name)
+        if state:
+            return self.load_game_state(state)
+        return False
+
+    def get_saved_games(self):
+        """Get list of all saved games."""
+        return self.db.get_saved_games()
