@@ -33,6 +33,13 @@ class TetrisDatabase:
                 date_time TEXT NOT NULL
             )
             ''')
+            self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS game_states (
+                player_name TEXT PRIMARY KEY,
+                game_state TEXT NOT NULL,
+                timestamp TEXT NOT NULL
+            )
+            ''')
             self.conn.commit()
         except sqlite3.Error as e:
             print(f"Error creating tables: {e}")
@@ -105,3 +112,41 @@ class TetrisDatabase:
         """Close the database connection."""
         if self.conn:
             self.conn.close()
+
+    def save_game_state(self, player_name, game_state_json):
+        """Save a game state to the database."""
+        try:
+            if not self.conn or not self.cursor:
+                self.connect()
+            
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            self.cursor.execute('''
+            INSERT OR REPLACE INTO game_states (player_name, game_state, timestamp)
+            VALUES (?, ?, ?)
+            ''', (player_name, game_state_json, timestamp))
+            
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Error saving game state: {e}")
+            return False
+
+    def load_game_state(self, player_name):
+        """Load a game state from the database."""
+        try:
+            if not self.conn or not self.cursor:
+                self.connect()
+            
+            self.cursor.execute('''
+            SELECT game_state FROM game_states WHERE player_name = ?
+            ''', (player_name,))
+            
+            row = self.cursor.fetchone()
+            if row:
+                return row[0]
+            else:
+                return None
+        except sqlite3.Error as e:
+            print(f"Error loading game state: {e}")
+            return None

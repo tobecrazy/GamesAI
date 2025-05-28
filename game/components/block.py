@@ -28,6 +28,26 @@ class Block:
         self.x = 3
         self.y = 0
 
+    def to_dict(self):
+        """Return a dictionary representation of the block."""
+        return {
+            'shape': self.shape,
+            'color': self.color,
+            'x': self.x,
+            'y': self.y
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        """Create a Block instance from a dictionary."""
+        # We assume shape and color are directly usable by __init__
+        # If SHAPES and COLORS were just indices, we'd need to look them up.
+        # For now, direct assignment is fine as per current __init__ structure.
+        block = cls(data['shape'], data['color'])
+        block.x = data['x']
+        block.y = data['y']
+        return block
+
     @classmethod
     def random(cls):
         shape_index = random.randint(0, len(cls.SHAPES) - 1)
