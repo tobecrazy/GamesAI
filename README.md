@@ -24,6 +24,7 @@ This is a Tetris game implemented in Python using the Pygame library.
 - SQLite database for storing and retrieving game scores
 - Performance grading system (S, A, B, C, D, F)
 - High score leaderboard
+- Save and Load game state (press 'S' to save, 'L' to load during gameplay)
 
 ## Requirements
 
@@ -56,15 +57,18 @@ This is a Tetris game implemented in Python using the Pygame library.
 - Down Arrow: Soft drop
 - Up Arrow: Rotate block clockwise
 - Spacebar: Hard drop
-- P or S: Pause/Resume game
+- P: Pause/Resume game
+- S: Save game (during gameplay) / View scrolling top 10 players (when game over)
+- L: Load game (during gameplay)
 - M: Toggle mute for all sounds and music
 - R: Restart game (when game over)
 - Q: Quit to main menu (during gameplay or game over)
-- S: Pause/Resume game (during gameplay) or view scrolling top 10 players (when game over)
 - N: Enter name to save score (when game over)
 - H: View high scores (when game over)
 - B: Go back from high scores screen
 - Any key: Return from scrolling scores screen
+
+*Note: The 'S' key was previously an alternative for pausing during gameplay; it is now dedicated to saving. Use 'P' for pausing.*
 
 ## Game Mechanics
 
@@ -187,7 +191,6 @@ You can easily customize various aspects of the game by modifying the constants 
 - Fixed bug where multiple completed rows wouldn't disappear simultaneously
 - Improved line clearing animation to handle multiple rows at once
 - Enhanced player name input with clearer instructions
-- Added alternative pause/resume control with 'S' key
 - Added game status display showing current pause/resume state
 
 Enjoy playing Tetris!
