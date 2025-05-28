@@ -224,6 +224,11 @@ scroll_paused = False
 # Sound state
 is_muted = False
 
+# Status message variables
+status_message = ""
+status_message_timer = 0
+FPS = 120 # Define FPS for timer
+
 def draw_high_scores():
     screen.fill((0, 0, 0))
     draw_text("HIGH SCORES", large_font, (255, 215, 0), WIDTH // 2, 50)  # Gold
@@ -409,8 +414,23 @@ while True:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_m:
                     is_muted = game.toggle_mute()
-                elif event.key == pygame.K_s:
-                    # Add S key as an alternative to pause/resume
+                elif event.key == pygame.K_s: # Save game state
+                    if game:
+                        if game.save_state():
+                            status_message = "Game saved!"
+                            status_message_timer = FPS * 2 # Display for 2 seconds
+                        else:
+                            status_message = "Error saving game."
+                            status_message_timer = FPS * 2
+                elif event.key == pygame.K_l: # Load game state
+                    if game:
+                        if game.load_state():
+                            status_message = "Game loaded!"
+                            status_message_timer = FPS * 2
+                        else:
+                            status_message = "No saved game found or error loading."
+                            status_message_timer = FPS * 2
+                elif event.key == pygame.K_p: # Existing Pause functionality
                     game.toggle_pause()
                 elif event.key == pygame.K_q:
                     game.sound.stop_background_music()
@@ -526,9 +546,13 @@ while True:
         mute_status = "M: Sound OFF" if is_muted else "M: Sound ON"
         draw_text(mute_status, font, (255, 255, 255), WIDTH - 100, 200)
 
-        # Draw game status (P/S: Pause)
-        game_status = "P/S: Pause" if not game.paused else "P/S: Resume"
+        # Draw game status (P: Pause) - S is now save
+        game_status = "P: Pause" if not game.paused else "P: Resume"
         draw_text(game_status, font, (255, 255, 255), WIDTH - 100, 230)
+
+        # Draw save/load instructions
+        draw_text("S: Save", font, (255, 255, 255), WIDTH - 100, HEIGHT - 80)
+        draw_text("L: Load", font, (255, 255, 255), WIDTH - 100, HEIGHT - 50)
 
         # Draw next block preview
         draw_text("Next:", font, (255, 255, 255), WIDTH - 100, 280)
@@ -541,6 +565,14 @@ while True:
                             game.next_block.color,
                             (WIDTH - 150 + x * 30, 330 + y * 30, 30, 30)
                         )
+        
+        # Display status message
+        if status_message_timer > 0:
+            draw_text(status_message, font, (255, 255, 0), WIDTH // 2, 30) # Yellow, centered top
+            status_message_timer -= 1
+        else:
+            status_message = ""
+
 
         if game.paused:
             draw_pause()

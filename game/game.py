@@ -1,11 +1,12 @@
 import pygame
+import json # Added import
 from .components.block import Block
 from .components.board import Board
 from .sound import Sound
 from .database import TetrisDatabase
 
 class Game:
-    def __init__(self, screen, player_name="Anonymous"):
+    def __init__(self, screen, player_name="Anonymous", db_instance=None):
         self.screen = screen
         self.board = Board()
         self.current_block = None
@@ -22,7 +23,10 @@ class Game:
         self.score_saved = False
 
         # Initialize database
-        self.db = TetrisDatabase()
+        if db_instance:
+            self.db = db_instance
+        else:
+            self.db = TetrisDatabase() # Default behavior
 
         self.sound = Sound()
         self.sound.start_background_music()
@@ -128,7 +132,9 @@ class Game:
 
     def restart_game(self):
         player_name = self.player_name  # Keep the player name
-        self.__init__(self.screen, player_name)
+        # Pass the current db instance if it exists, otherwise it will create a new one.
+        db_instance = getattr(self, 'db', None)
+        self.__init__(self.screen, player_name, db_instance=db_instance)
         self.sound.start_background_music()  # Ensure music starts on restart
 
     def toggle_pause(self):
@@ -154,3 +160,67 @@ class Game:
     def set_player_name(self, name):
         """Set the player name."""
         self.player_name = name if name else "Anonymous"
+
+    def save_state(self):
+        """Save the current game state to the database."""
+        if not self.current_block or not self.next_block:
+            # Cannot save if blocks are not initialized (e.g., very start or end of game)
+            return False
+
+        game_state = {
+            'board': self.board.grid,
+            'current_block': self.current_block.to_dict(),
+            'next_block': self.next_block.to_dict(),
+            'score': self.score,
+            'level': self.level,
+            'lines_cleared': self.lines_cleared,
+            'fall_speed': self.fall_speed,
+            'player_name': self.player_name, # player_name is part of the key in DB
+            'game_over': self.game_over,
+            'paused': self.paused,
+            'fall_time': self.fall_time,
+            'score_saved': self.score_saved # Important to restore this
+        }
+        try:
+            serialized_state = json.dumps(game_state)
+            return self.db.save_game_state(self.player_name, serialized_state)
+        except TypeError as e:
+            print(f"Error serializing game state: {e}")
+            return False
+
+    def load_state(self):
+        """Load the game state from the database."""
+        serialized_state = self.db.load_game_state(self.player_name)
+        if serialized_state:
+            try:
+                game_state = json.loads(serialized_state)
+
+                self.board.grid = game_state['board']
+                self.current_block = Block.from_dict(game_state['current_block'])
+                self.next_block = Block.from_dict(game_state['next_block'])
+                self.score = game_state['score']
+                self.level = game_state['level']
+                self.lines_cleared = game_state['lines_cleared']
+                self.fall_speed = game_state['fall_speed']
+                # self.player_name is already correct as it's used for loading
+                self.game_over = game_state['game_over']
+                self.paused = game_state['paused']
+                self.fall_time = game_state['fall_time']
+                self.score_saved = game_state.get('score_saved', False) # For compatibility with older saves
+
+                # Ensure sound state is consistent with loaded game state
+                if self.paused:
+                    self.sound.stop_background_music()
+                else:
+                    self.sound.start_background_music()
+                
+                # Reset fall_time to avoid immediate drop after loading if game was paused a long time
+                if not self.game_over and not self.paused:
+                     self.fall_time = pygame.time.get_ticks()
+
+
+                return True
+            except (TypeError, KeyError, json.JSONDecodeError) as e:
+                print(f"Error loading or parsing game state: {e}")
+                return False
+        return False
