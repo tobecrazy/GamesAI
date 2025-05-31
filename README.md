@@ -194,3 +194,44 @@ You can easily customize various aspects of the game by modifying the constants 
 - Added game status display showing current pause/resume state
 
 Enjoy playing Tetris!
+
+## Web Version (Experimental)
+
+An attempt has been made to encapsulate this Tetris game for web browsers using Pygbag. This would allow playing the game online without a local Python installation.
+
+**Key Adaptations Made:**
+- The game loop in `main.py` (a copy of `tetris.py` for web) was converted to use `asyncio` for browser compatibility.
+- Data persistence (`game/database.py`) was modified to use browser `localStorage` instead of SQLite for high scores and saved games.
+
+**Attempting to Build (Pygbag):**
+
+If you wish to attempt to build the web version yourself, you would typically run Pygbag from the project's root directory:
+
+```bash
+# Ensure Pygbag is installed: pip install pygbag
+# Then, from the project root:
+pygbag . --build_dir web_build --assets assets
+```
+
+This command tells Pygbag to:
+- Process the current directory (`.`).
+- Place output into the `web_build` folder.
+- Include the `assets/` directory.
+
+**Running the Web Version Locally:**
+
+If the Pygbag build is successful, it will generate an `index.html` and other necessary files in the `web_build` directory. To run it, you'll need a local HTTP server due to browser security policies (CORS):
+
+```bash
+python -m http.server --directory web_build 8000
+```
+Then open your browser to `http://localhost:8000`.
+
+**Known Issues & Current Status:**
+- **Build Failure:** In the automated development environment, the `pygbag` build process **failed** due to timeouts. This was related to:
+    - The automatic installation of `ffmpeg` (a dependency Pygbag uses to convert `.mp3` audio files to web-friendly `.ogg` format).
+    - The `pygbag` packaging process itself also timing out.
+- **Untested:** Consequently, the web version is **currently untested and its functionality is not verified.**
+- **Audio Files:** For a successful build, either `ffmpeg` must be available in the build environment, or all `.mp3` audio files in the `assets` directory should be pre-converted to `.ogg` or `.wav` format.
+
+The changes made represent a foundational step towards web compatibility, but further work in a suitable build environment is required to produce a functional web version.
