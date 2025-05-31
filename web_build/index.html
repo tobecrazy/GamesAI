@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Online</title>
+    <style>
+        body { margin: 0; background-color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: Arial, sans-serif; }
+        canvas { border: 1px solid #000; }
+        /* Pygbag usually handles canvas styling, but this is a fallback */
+        #pygame-canvas {
+            width: 800px; /* Should match game dimensions */
+            height: 600px; /* Should match game dimensions */
+        }
+        .info { text-align: center; margin-bottom: 1em; }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="info">
+            <h1>Tetris Online</h1>
+            <p>Loading game... If it doesn't start, Pygbag build might have been incomplete.</p>
+        </div>
+        <!-- Pygbag will typically target a canvas with a specific ID or create its own -->
+        <!-- The ID 'canvas' is common, or 'pygame-canvas' -->
+        <canvas id="pygame-canvas" oncontextmenu="event.preventDefault()"></canvas>
+
+        <!--
+          Pygbag generated JS files would normally be included here.
+          For example:
+          <script src="pygame_wasm.js"></script>
+          <script src="main.js"></script>
+          The actual script names and loading mechanism are determined by Pygbag's build output.
+        -->
+    </div>
+
+    <script>
+        // Attempt to disable context menu on the canvas as a fallback.
+        // Pygbag's noctx.html template would handle this more robustly.
+        var canvas = document.getElementById('pygame-canvas');
+        if (canvas) {
+            canvas.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+        }
+        console.log("Pygbag HTML shell loaded. Game execution depends on Pygbag build scripts.");
+    </script>
+</body>
+</html>
