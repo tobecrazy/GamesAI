@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="startMenu">
+        <h1>Tetris</h1>
+        <button id="startGameBtn">Start New Game</button>
+        <button id="loadGameBtn">Load Saved Game</button>
+        <button id="viewHighScoresBtn">View High Scores</button>
+        <div id="menuHighScores" style="display:none;">
+            <h2>High Scores</h2>
+            <div id="highScoresList"></div>
+            <button id="backToMenuBtn">Back to Menu</button>
+        </div>
+    </div>
+
+    <div id="gameContainer" style="display:none;">
+        <canvas id="tetrisCanvas"></canvas>
+        <div id="gameInfo">
+            <h2>Score: <span id="scoreDisplay">0</span></h2>
+            <h2>Level: <span id="levelDisplay">1</span></h2>
+            <h2>Lines: <span id="linesDisplay">0</span></h2>
+            <div id="nextBlockContainer">
+                <h3>Next Block:</h3>
+                <canvas id="nextBlockCanvas"></canvas>
+            </div>
+            <div id="gameMessages" style="display:none;"></div>
+            <div id="muteStatus" style="text-align: center; margin-top: 10px; min-height: 20px;"></div>
+        </div>
+    </div>
+    <script src="js/block.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/sound.js"></script>
+    <script src="js/game.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('tetrisCanvas');
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const levelDisplay = document.getElementById('levelDisplay');
+            const linesDisplay = document.getElementById('linesDisplay');
+            const nextBlockCanvas = document.getElementById('nextBlockCanvas');
+            const gameMessagesElement = document.getElementById('gameMessages');
+            const muteStatusElement = document.getElementById('muteStatus');
+            const startMenuElement = document.getElementById('startMenu');
+            const startGameBtn = document.getElementById('startGameBtn');
+            const loadGameBtn = document.getElementById('loadGameBtn');
+            const viewHighScoresBtn = document.getElementById('viewHighScoresBtn');
+            const menuHighScoresElement = document.getElementById('menuHighScores');
+            const highScoresListElement = document.getElementById('highScoresList');
+            const backToMenuBtn = document.getElementById('backToMenuBtn');
+
+
+            const game = new Game(
+                canvas, scoreDisplay, levelDisplay, linesDisplay, nextBlockCanvas,
+                gameMessagesElement, // Pass gameMessagesElement
+                startMenuElement, startGameBtn, loadGameBtn, viewHighScoresBtn,
+                menuHighScoresElement, highScoresListElement, backToMenuBtn // Pass new menu elements
+            );
+
+            // game.setMuteStatusElement(muteStatusElement); // If you want to manage mute status display separately
+
+            game.initializeUI(); // New method to set up initial UI state and menu listeners
+            // game.start() will be called by clicking "Start New Game" or "Load Game"
+        });
+    </script>
+</body>
+</html>

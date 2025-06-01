@@ -1,10 +1,27 @@
 class Game {
-    constructor(canvas, scoreDisplay, levelDisplay, linesDisplay, nextBlockCanvas) {
+    constructor(
+        canvas, scoreDisplay, levelDisplay, linesDisplay, nextBlockCanvas,
+        gameMessagesElement, // Added
+        startMenuElement, startGameBtn, loadGameBtn, viewHighScoresBtn, // Added
+        menuHighScoresElement, highScoresListElement, backToMenuBtn // Added
+    ) {
         this.canvas = canvas;
         this.scoreDisplay = scoreDisplay;
         this.levelDisplay = levelDisplay;
         this.linesDisplay = linesDisplay;
         this.nextBlockCanvas = nextBlockCanvas;
+        this.gameMessagesElement = gameMessagesElement; // Store reference
+
+        // Menu elements
+        this.startMenuElement = startMenuElement;
+        this.startGameBtn = startGameBtn;
+        this.loadGameBtn = loadGameBtn;
+        this.viewHighScoresBtn = viewHighScoresBtn;
+        this.menuHighScoresElement = menuHighScoresElement;
+        this.highScoresListElement = highScoresListElement;
+        this.backToMenuBtn = backToMenuBtn;
+
+        this.gameContainer = document.getElementById('gameContainer'); // Assuming 'gameContainer' is the ID of the main game area
 
         this.ctx = this.canvas.getContext('2d');
         this.nextBlockCtx = this.nextBlockCanvas.getContext('2d');
@@ -89,9 +106,12 @@ class Game {
         try {
             const savedStateJSON = localStorage.getItem(this.SAVED_GAME_KEY);
             if (!savedStateJSON) {
-                if (this.gameMessagesElement) {
+                if (this.gameMessagesElement && this.startMenuElement.style.display !== 'none') { // Show message only if on menu
                     this.gameMessagesElement.textContent = "No saved game found.";
-                    setTimeout(() => { if(this.gameMessagesElement.textContent === "No saved game found.") this.gameMessagesElement.textContent = ""; }, 1500);
+                     setTimeout(() => { if(this.gameMessagesElement && this.gameMessagesElement.textContent === "No saved game found.") this.gameMessagesElement.textContent = ""; }, 1500);
+                } else if (this.gameMessagesElement) { // Fallback for other contexts if needed
+                     this.gameMessagesElement.textContent = "No saved game found.";
+                     setTimeout(() => { if(this.gameMessagesElement && this.gameMessagesElement.textContent === "No saved game found.") this.gameMessagesElement.textContent = ""; }, 1500);
                 }
                 console.log("No saved game found.");
                 return false;
@@ -107,20 +127,30 @@ class Game {
             this.linesCleared = loadedState.linesCleared;
             this.fallSpeed = loadedState.fallSpeed;
 
-            this.lastFallTime = performance.now(); // Reset to current time to prevent immediate drop
+            this.lastFallTime = performance.now();
 
-            this.gameOver = false; // Loaded game is not game over
-            this.paused = false;   // Unpause on load
+            this.gameOver = false;
+            this.paused = false;
 
             this.updateDisplays();
-            if (this.gameMessagesElement) this.gameMessagesElement.textContent = "Game Loaded!";
+
+            this.sound.stopBackgroundMusic();
+            this.sound.startBackgroundMusic();
+
+            this.hideStartMenu();
+            this.showGameUI();
+            if (this.gameMessagesElement) this.gameMessagesElement.textContent = "Game Loaded!"; // Show on game screen
             setTimeout(() => { if(this.gameMessagesElement && this.gameMessagesElement.textContent === "Game Loaded!") this.gameMessagesElement.textContent = ""; }, 1500);
 
-            this.sound.stopBackgroundMusic(); // Stop current music if any
-            this.sound.startBackgroundMusic(); // Start music for loaded game
 
-            this.draw(); // Redraw the game with loaded state
-            this.gameLoop(); // Ensure game loop continues/restarts
+            this.draw();
+            if (!this.paused && !this.gameOver) {
+                 this.gameLoop(performance.now());
+            } else if (this.paused) {
+                this.paused = false;
+                this.gameLoop(performance.now());
+            }
+
 
             console.log("Game state loaded.");
             return true;
@@ -129,7 +159,7 @@ class Game {
             console.error("Error loading game state:", error);
             if (this.gameMessagesElement) {
                 this.gameMessagesElement.textContent = "Error loading saved game.";
-                 setTimeout(() => { if(this.gameMessagesElement.textContent === "Error loading saved game.") this.gameMessagesElement.textContent = ""; }, 1500);
+                 setTimeout(() => { if(this.gameMessagesElement && this.gameMessagesElement.textContent === "Error loading saved game.") this.gameMessagesElement.textContent = ""; }, 1500);
             }
             return false;
         }
@@ -162,42 +192,108 @@ class Game {
         }
     }
 
-    displayHighScores() {
-        if (!this.gameMessagesElement) return;
-
-        const highScores = this.getHighScores();
-        let message = "<strong>High Scores:</strong><br>";
-        if (highScores.length === 0) {
-            message += "No high scores yet!<br>";
+    displayHighScores(displayInMenu = false) {
+        const scores = this.getHighScores();
+        let html = "";
+        if (scores.length === 0) {
+            html = "<p>No high scores yet!</p>";
         } else {
-            message += "<ol style='padding-left: 20px; text-align: left;'>"; // Basic styling for list
-            highScores.forEach((score, index) => {
-                message += `<li>${score.name}: ${score.score}</li>`;
+            html = "<ol>";
+            scores.forEach(score => {
+                html += `<li>${score.name}: ${score.score}</li>`;
             });
-            message += "</ol>";
+            html += "</ol>";
         }
-        message += "<br>Press R to Restart.";
-        this.gameMessagesElement.innerHTML = message; // Use innerHTML for <br> and list
+
+        if (displayInMenu) {
+            this.highScoresListElement.innerHTML = html;
+            this.startMenuElement.style.display = 'none'; // Hide main menu buttons
+            this.menuHighScoresElement.style.display = 'block'; // Show high scores section
+        } else { // Display in gameMessagesElement (e.g., after game over)
+            if (!this.gameMessagesElement) return;
+            let message = "<strong>High Scores:</strong><br>" + html;
+            message += "<br>Press R to Restart.";
+            this.gameMessagesElement.innerHTML = message;
+            this.gameMessagesElement.style.display = 'block';
+        }
     }
 
     // --- End High Score Methods ---
 
+    // --- UI Control Methods ---
+    showStartMenu() {
+        this.startMenuElement.style.display = 'flex'; // Or 'block' based on your CSS for startMenu
+        this.menuHighScoresElement.style.display = 'none'; // Ensure high scores section is hidden
+        if (this.gameContainer) this.gameContainer.style.display = 'none';
+        if (this.gameMessagesElement) this.gameMessagesElement.style.display = 'none';
+
+        // Enable/disable load game button
+        if (localStorage.getItem(this.SAVED_GAME_KEY)) {
+            this.loadGameBtn.disabled = false;
+        } else {
+            this.loadGameBtn.disabled = true;
+        }
+    }
+
+    hideStartMenu() {
+        this.startMenuElement.style.display = 'none';
+    }
+
+    showGameUI() {
+        if (this.gameContainer) this.gameContainer.style.display = 'flex'; // Or 'block'
+        if (this.gameMessagesElement) this.gameMessagesElement.style.display = 'block'; // Or as appropriate
+    }
+
+    initializeUI() {
+        this.showStartMenu();
+        this.initEventListeners(); // Initialize game-related event listeners (keys)
+
+        // Menu button listeners
+        this.startGameBtn.addEventListener('click', () => {
+            this.hideStartMenu();
+            this.showGameUI();
+            this.restartGame(); // This calls init() and starts gameLoop
+        });
+
+        this.loadGameBtn.addEventListener('click', () => {
+            if (this.loadGameState()) {
+                this.hideStartMenu();
+                this.showGameUI();
+                // loadGameState should handle starting the game loop
+            } else {
+                // Message already shown by loadGameState if it fails
+            }
+        });
+
+        this.viewHighScoresBtn.addEventListener('click', () => {
+            this.displayHighScores(true); // True to display in menu
+        });
+
+        this.backToMenuBtn.addEventListener('click', () => {
+            this.showStartMenu(); // This will hide high scores and show main menu buttons
+        });
+    }
+
+    // --- End UI Control Methods ---
+
 
     init() {
-        this.board = new Board(); // Re-initialize board
+        this.board = new Board();
         this.score = 0;
         this.level = 1;
         this.linesCleared = 0;
         this.gameOver = false;
         this.paused = false;
         this.fallSpeed = 1000;
-        this.lastFallTime = performance.now(); // Reset fall time
+        this.lastFallTime = performance.now();
 
-        if (this.gameMessagesElement) { // Clear any previous messages
+        if (this.gameMessagesElement) {
             this.gameMessagesElement.textContent = "";
+            // Ensure it's hidden if game is starting, shown if messages need to be displayed
+            // this.gameMessagesElement.style.display = 'none'; // Handled by showStartMenu/showGameUI
         }
 
-        this.currentBlock = null; // Explicitly nullify before generating new ones
+        this.currentBlock = null;
         this.nextBlock = null;
         this.generateNewBlock(); // Generates current and next
         this.generateNewBlock(); // Sets current to former next, and generates a new next
@@ -280,23 +376,22 @@ class Game {
         this.generateNewBlock();
 
         if (this.gameOver) {
-            // This is where game over is definitively known after an attempted block placement
+            this.sound.stopBackgroundMusic(); // Stop music on game over.
+            // Game Over sequence:
+            // 1. Potentially save high score
             if (this.score > 0) {
-                // Check if current score is a high score before prompting
                 const highScores = this.getHighScores();
-                const lowestHighScore = highScores.length < 10 ? 0 : highScores[highScores.length -1].score;
+                const lowestHighScore = highScores.length < 10 ? 0 : highScores[highScores.length - 1].score;
                 if (this.score > lowestHighScore || highScores.length < 10) {
                     const playerName = prompt(`Game Over! Your score: ${this.score}. Enter your name:`, 'Player');
-                    if (playerName) { // If player provides a name (doesn't hit cancel or leave empty)
+                    if (playerName) {
                         this.saveHighScore(playerName, this.score);
                     }
-                } else {
-                     if(this.gameMessagesElement) this.gameMessagesElement.textContent = `Game Over! Final Score: ${this.score}. Press R to Restart.`;
                 }
-            } else {
-                 if(this.gameMessagesElement) this.gameMessagesElement.textContent = `Game Over! Final Score: ${this.score}. Press R to Restart.`;
             }
-            this.displayHighScores(); // Always display high scores at game over
+            // 2. Show start menu, possibly with high scores
+            this.showStartMenu();
+            this.displayHighScores(true); // Display high scores in the menu's high score section
             // The gameLoop will return on the next frame because this.gameOver is true.
         }
     }
@@ -545,31 +640,29 @@ class Game {
 
 
     // Method to be called to start the game
-    start() {
-        this.init();
-        this.initEventListeners();
-        this.sound.startBackgroundMusic(); // Start music when game starts
-        this.gameLoop();
+    start() { // This method is now effectively "startNewGame" triggered by button
+        this.init(); // Resets game state
+        this.sound.startBackgroundMusic();
+        this.gameLoop(); // Starts the game logic loop
     }
 
-    initEventListeners() {
-        // Add a one-time event listener for the first user interaction to resume AudioContext
+
+    initEventListeners() { // Renamed from previous `start()` parts that set up listeners
         const firstInteractionListener = () => {
             if (this.sound && this.sound.audioContext && this.sound.audioContext.state === 'suspended') {
                 this.sound.resumeAudioContext();
             }
-            this.userInteracted = true; // Mark that user has interacted
-            // Optionally remove this listener if it's truly one-time for global interaction
+            this.userInteracted = true;
             document.removeEventListener('keydown', firstInteractionListener, true);
             document.removeEventListener('click', firstInteractionListener, true);
         };
-        // Listen for keydown or click as first interaction
         document.addEventListener('keydown', firstInteractionListener, { once: true, capture: true });
         document.addEventListener('click', firstInteractionListener, { once: true, capture: true });
 
-
         document.addEventListener('keydown', event => this.handleKeyInput(event));
+        // Menu button listeners are now in initializeUI()
     }
+
 
     handleKeyInput(event) {
         // Resume audio context on any key press if suspended (first interaction)
@@ -587,6 +680,12 @@ class Game {
         }
         if (event.code === 'KeyR') {
             event.preventDefault();
+            if (this.gameOver) {
+                this.hideStartMenu();
+                this.showGameUI();
+            } else if (this.paused) {
+                // No specific UI change for pause, restartGame will handle it
+            }
             this.restartGame();
             return;
         }
@@ -667,8 +766,8 @@ class Game {
         }
     }
 
-    // Setter for game messages element (if needed later)
-    setGameMessagesElement(element) {
-        this.gameMessagesElement = element;
-    }
+    // Setter for game messages element (if needed later) - already passed in constructor
+    // setGameMessagesElement(element) {
+    //     this.gameMessagesElement = element;
+    // }
 }
