@@ -27,11 +27,11 @@ class Game {
         this.nextBlockCtx = this.nextBlockCanvas.getContext('2d');
 
         this.sound = new Sound(); // Instantiate Sound
-        this.sound.initBackgroundMusic('assets/background.mp3');
-        this.sound.loadSound('clear', 'assets/clear.mp3');
-        this.sound.loadSound('drop', 'assets/drop.mp3');
-        this.sound.loadSound('gameover', 'assets/gameover.mp3');
-        this.sound.loadSound('rotate', 'assets/rotate.mp3');
+        this.sound.initBackgroundMusic('../assets/background.mp3'); // Path updated
+        this.sound.loadSound('clear', '../assets/clear.mp3');     // Path updated
+        this.sound.loadSound('drop', '../assets/drop.mp3');       // Path updated
+        this.sound.loadSound('gameover', '../assets/gameover.mp3'); // Path updated
+        this.sound.loadSound('rotate', '../assets/rotate.mp3');     // Path updated
         // Add a flag to ensure user interaction has occurred before playing sounds automatically
         this.userInteracted = false;
 
