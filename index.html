@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="tetrisCanvas"></canvas>
+        <div id="gameInfo">
+            <h2>Score: <span id="scoreDisplay">0</span></h2>
+            <h2>Level: <span id="levelDisplay">1</span></h2>
+            <h2>Lines: <span id="linesDisplay">0</span></h2>
+            <div id="nextBlockContainer">
+                <h3>Next Block:</h3>
+                <canvas id="nextBlockCanvas"></canvas>
+            </div>
+            <div id="gameMessages"></div>
+            <div id="muteStatus" style="text-align: center; margin-top: 10px; min-height: 20px;"></div>
+        </div>
+    </div>
+    <script src="js/block.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/sound.js"></script>
+    <script src="js/game.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('tetrisCanvas');
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const levelDisplay = document.getElementById('levelDisplay');
+            const linesDisplay = document.getElementById('linesDisplay');
+            const nextBlockCanvas = document.getElementById('nextBlockCanvas');
+            const gameMessagesElement = document.getElementById('gameMessages');
+            const muteStatusElement = document.getElementById('muteStatus'); // Get mute status element
+
+            const game = new Game(canvas, scoreDisplay, levelDisplay, linesDisplay, nextBlockCanvas);
+            game.setGameMessagesElement(gameMessagesElement);
+            // Pass muteStatusElement to game instance if Game class is designed to update it directly
+            // For now, Game's handleKeyInput updates gameMessagesElement for mute, which is fine.
+            // Alternatively, a dedicated method in Game could update muteStatusElement.
+            // game.setMuteStatusElement(muteStatusElement);
+
+            // Event listeners are now initialized within game.start() -> game.initEventListeners()
+            game.start();
+        });
+    </script>
+</body>
+</html>
