@@ -285,3 +285,7 @@ class Game:
             self.snake.draw(surface)
             self.food.draw(surface)
         # If game_over is True, the run method handles drawing the game over screen.
+
+if __name__ == "__main__":
+    game = Game()
+    game.run()
