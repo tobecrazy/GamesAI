@@ -9,11 +9,11 @@ CELL_SIZE = 20
 # FPS = 10 # FPS is now level-dependent
 
 LEVELS_CONFIG = [
-    {'level': 1, 'fps': 7, 'score_to_next_level': 50},  # Score to reach level 2
-    {'level': 2, 'fps': 9, 'score_to_next_level': 100}, # Score to reach level 3
-    {'level': 3, 'fps': 11, 'score_to_next_level': 150},# Score to reach level 4
-    {'level': 4, 'fps': 13, 'score_to_next_level': 200},# Score to reach level 5
-    {'level': 5, 'fps': 15, 'score_to_next_level': 250} # Max level
+    {'level': 1, 'fps': 1, 'score_to_next_level': 50},
+    {'level': 2, 'fps': 2, 'score_to_next_level': 100},
+    {'level': 3, 'fps': 3, 'score_to_next_level': 150},
+    {'level': 4, 'fps': 4, 'score_to_next_level': 200},
+    {'level': 5, 'fps': 5, 'score_to_next_level': 250}
 ]
 
 # Colors
